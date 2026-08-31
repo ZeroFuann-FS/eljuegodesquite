@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0f111a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Boxea al Pelón">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="description" content="El Desquite: Boxea al Pelón - Juego arcade de boxeo antiestrés para móvil y PC con físicas y sonidos">
+  
+  <title>El Desquite: Boxea al Pelón 🥊👨‍🦲</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="game-wrapper">
+    <!-- Canvas principal del juego -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- HUD Superior -->
+    <header id="hud-top">
+      <div class="hud-box score-box">
+        <span class="hud-label">PUNTOS</span>
+        <span id="score-display" class="hud-value">0</span>
+      </div>
+
+      <div class="hud-center">
+        <div class="health-container">
+          <div class="health-header">
+            <span class="pelon-name">👨‍🦲 EL PELÓN</span>
+            <span id="hp-text">100%</span>
+          </div>
+          <div class="bar-outer hp-bar">
+            <div id="hp-fill" class="bar-fill" style="width: 100%;"></div>
+          </div>
+        </div>
+
+        <div class="rage-container">
+          <div class="rage-header">
+            <span class="rage-label">⚡ FURIA</span>
+            <span id="rage-text">0%</span>
+          </div>
+          <div class="bar-outer rage-bar">
+            <div id="rage-fill" class="bar-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hud-box coins-box">
+        <span class="hud-label">MONEDAS</span>
+        <span class="coins-val"><span class="coin-icon">🪙</span> <span id="coins-display">0</span></span>
+      </div>
+    </header>
+
+    <!-- Notificador de Modo / Mensajes -->
+    <div id="status-banner" class="status-banner">¡DALE SU MERECIDO!</div>
+
+    <!-- Indicador de Combo flotante -->
+    <div id="combo-hud" class="combo-hud hidden">
+      <div id="combo-number" class="combo-num">0</div>
+      <div class="combo-sub">HITS COMBO!</div>
+      <div id="combo-rank" class="combo-rank">¡BUENO!</div>
+    </div>
+
+    <!-- BOTONERA TÁCTIL PARA CELULARES (Mobile Touch Controls) -->
+    <div id="mobile-touch-pad" class="mobile-touch-pad">
+      <button id="touch-btn-left" class="touch-action-btn punch-left-btn" aria-label="Golpe Izquierdo">
+        <span class="touch-icon">🥊</span>
+        <span class="touch-label">IZQ</span>
+      </button>
+
+      <button id="touch-btn-uppercut" class="touch-action-btn uppercut-btn" aria-label="Uppercut">
+        <span class="touch-icon">⚡</span>
+        <span class="touch-label">UPPER</span>
+      </button>
+
+      <button id="touch-btn-rage" class="touch-action-btn rage-touch-btn disabled" aria-label="Furia">
+        <span class="touch-icon">🔥</span>
+        <span class="touch-label">FURIA</span>
+      </button>
+
+      <button id="touch-btn-right" class="touch-action-btn punch-right-btn" aria-label="Golpe Derecho">
+        <span class="touch-icon">🥊</span>
+        <span class="touch-label">DER</span>
+      </button>
+    </div>
+
+    <!-- HUD Inferior con Botones de Menú y Opciones -->
+    <footer id="hud-bottom">
+      <div class="controls-hint">
+        <span>🎮 <b>Clic / Touch:</b> Golpear</span>
+        <span><b>A / D:</b> Ganchos</span>
+        <span><b>W:</b> Uppercut</span>
+        <span><b>S:</b> Al cuerpo</span>
+        <span><b>Espacio:</b> ¡Furia!</span>
+      </div>
+
+      <div class="action-buttons">
+        <button id="btn-mode" class="hud-btn mode-btn" title="Cambiar modo de juego">
+          <span class="btn-icon">⏱️</span>
+          <span id="mode-text">Modo Libre</span>
+        </button>
+
+        <button id="btn-shop" class="hud-btn shop-btn" title="Tienda de Guantes y Accesorios">
+          <span class="btn-icon">🥊</span>
+          <span>Tienda</span>
+        </button>
+
+        <button id="btn-reset" class="hud-btn reset-btn" title="Curar / Reiniciar Muñeco">
+          <span class="btn-icon">🩹</span>
+          <span>Curar</span>
+        </button>
+
+        <button id="btn-sound" class="hud-btn sound-btn" title="Sonido">
+          <span id="sound-icon" class="btn-icon">🔊</span>
+        </button>
+
+        <button id="btn-fullscreen" class="hud-btn fullscreen-btn" title="Pantalla Completa">
+          <span class="btn-icon">⛶</span>
+        </button>
+      </div>
+    </footer>
+
+    <!-- Overlay de Time Attack -->
+    <div id="time-attack-overlay" class="time-attack-panel hidden">
+      <div class="timer-display">
+        <span class="timer-label">TIEMPO:</span>
+        <span id="timer-seconds">30</span>s
+      </div>
+      <div class="ko-counter">
+        <span class="ko-label">K.O.s:</span>
+        <span id="ko-count">0</span>
+      </div>
+    </div>
+
+    <!-- Modal de la Tienda -->
+    <div id="shop-modal" class="modal-backdrop hidden">
+      <div class="modal-content shop-modal-card">
+        <div class="modal-header">
+          <h2>🏪 TIENDA DEL RING</h2>
+          <button id="btn-close-shop" class="close-btn">&times;</button>
+        </div>
+
+        <div class="shop-tabs">
+          <button class="shop-tab active" data-tab="gloves">🥊 Guantes</button>
+          <button class="shop-tab" data-tab="accessories">🎭 Accesorios del Pelón</button>
+        </div>
+
+        <!-- Pestaña de Guantes -->
+        <div id="tab-gloves" class="shop-tab-content active">
+          <div class="shop-grid" id="gloves-grid"></div>
+        </div>
+
+        <!-- Pestaña de Accesorios -->
+        <div id="tab-accessories" class="shop-tab-content">
+          <div class="shop-grid" id="accessories-grid"></div>
+        </div>
+
+        <div class="shop-footer">
+          <div class="shop-balance">
+            <span>Tus Monedas:</span>
+            <span class="coin-highlight">🪙 <span id="shop-coins-display">0</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Victoria / Resultados Time Attack -->
+    <div id="results-modal" class="modal-backdrop hidden">
+      <div class="modal-content results-modal-card">
+        <h2>🔔 ¡TIEMPO FUERA!</h2>
+        <div class="results-stats">
+          <div class="result-row">
+            <span>K.O.s Logrados:</span>
+            <span id="res-kos" class="highlight">0</span>
+          </div>
+          <div class="result-row">
+            <span>Daño Total Infligido:</span>
+            <span id="res-damage" class="highlight">0</span>
+          </div>
+          <div class="result-row">
+            <span>Max Combo:</span>
+            <span id="res-combo" class="highlight">0</span>
+          </div>
+          <div class="result-row">
+            <span>Monedas Ganadas:</span>
+            <span id="res-coins" class="coin-highlight">🪙 +0</span>
+          </div>
+        </div>
+        <button id="btn-play-again" class="primary-btn">¡OTRA VEZ! 🥊</button>
+      </div>
+    </div>
+
+    <!-- Pantalla Inicial / Click para Comenzar -->
+    <div id="start-overlay" class="modal-backdrop">
+      <div class="start-card">
+        <div class="title-badge">¡DESAHOGA TU ESTRÉS!</div>
+        <h1 class="game-title">EL DESQUITE<br><span class="subtitle">BOXEA AL PELÓN</span></h1>
+        
+        <div class="pelon-avatar-preview">
+          👨‍🦲💥🥊
+        </div>
+
+        <p class="intro-desc">
+          Dale golpes, ganchos y uppercuts al muñeco pelón con físicas elásticas, sácale moretones y acumula monedas para desbloquear armas locas.
+        </p>
+
+        <button id="btn-start-game" class="huge-start-btn">
+          <span>¡A GOLPEAR!</span> 🥊
+        </button>
+
+        <div class="instructions-pill">
+          💡 <b>En Celular:</b> Toca la pantalla o usa los botones táctiles inferiores.<br>
+          💡 <b>En PC:</b> Clic o teclas A, D, W, S y Espacio para FURIA.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
