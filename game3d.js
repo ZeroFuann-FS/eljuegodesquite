@@ -215,6 +215,23 @@ class SoundEngine3D {
     osc.start(t);
     osc.stop(t + 0.24);
   }
+
+  playBell() {
+    if (!this.enabled) return;
+    this.init();
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, t);
+    osc.frequency.exponentialRampToValueAtTime(440, t + 0.8);
+    gain.gain.setValueAtTime(0.6, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.85);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.9);
+  }
 }
 
 // ==========================================
@@ -391,12 +408,10 @@ class PelonEnemy3D {
     const distToPlayer = this.root.position.distanceTo(playerPos);
 
     if (distToPlayer < 35) {
-      // Perseguir al jugador
       const dir = playerPos.clone().sub(this.root.position).setY(0).normalize();
       this.root.position.addScaledVector(dir, this.moveSpeed * dt);
       this.root.lookAt(playerPos.x, this.root.position.y, playerPos.z);
     } else {
-      // Patrullar hacia el centro de la tormenta
       if (this.aiTimer <= 0) {
         this.aiTimer = 3.0 + Math.random() * 3.0;
         const angle = Math.random() * Math.PI * 2;
@@ -486,8 +501,8 @@ class Game3D {
     this.attackCooldown = 0;
 
     // Modos y Mapas
-    this.currentMode = 'royale'; // 'royale', 'horde', 'sandbox'
-    this.currentMap = 'island'; // 'island', 'city', 'volcano', 'ring'
+    this.currentMode = 'royale';
+    this.currentMap = 'island';
 
     // Tormenta Battle Royale
     this.stormRadius = 120.0;
@@ -541,13 +556,9 @@ class Game3D {
     this.scene.add(this.sunLight);
   }
 
-  // ==========================================
-  // GENERADOR DE MAPAS / PAISAJES 3D
-  // ==========================================
   loadMap(mapType) {
     this.currentMap = mapType;
 
-    // Limpiar mapa previo
     this.mapObjects.forEach(obj => this.scene.remove(obj));
     this.mapObjects = [];
     this.enemies.forEach(e => this.scene.remove(e.root));
@@ -557,10 +568,13 @@ class Game3D {
     this.tntBarrels.forEach(b => this.scene.remove(b.mesh));
     this.tntBarrels = [];
 
-    document.getElementById('map-name-label').textContent =
-      mapType === 'island' ? '🏝️ Isla Royale' :
-      (mapType === 'city' ? '🏙️ Ciudad Neón' :
-      (mapType === 'volcano' ? '🌋 Volcán Magma' : '🥊 Ring Boxeo'));
+    const label = document.getElementById('map-name-label');
+    if (label) {
+      label.textContent =
+        mapType === 'island' ? '🏝️ Isla Royale' :
+        (mapType === 'city' ? '🏙️ Ciudad Neón' :
+        (mapType === 'volcano' ? '🌋 Volcán Magma' : '🥊 Ring Boxeo'));
+    }
 
     if (mapType === 'island') {
       this.buildIslandMap();
@@ -581,7 +595,6 @@ class Game3D {
     this.scene.background = new THREE.Color(0x7dd3fc);
     this.scene.fog = new THREE.FogExp2(0x7dd3fc, 0.012);
 
-    // Suelo verde con colinas
     const groundGeo = new THREE.PlaneGeometry(240, 240, 32, 32);
     const groundMat = new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.8 });
     const ground = new THREE.Mesh(groundGeo, groundMat);
@@ -590,7 +603,6 @@ class Game3D {
     this.scene.add(ground);
     this.mapObjects.push(ground);
 
-    // Mar alrededor
     const oceanGeo = new THREE.PlaneGeometry(500, 500);
     const oceanMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, transparent: true, opacity: 0.85 });
     const ocean = new THREE.Mesh(oceanGeo, oceanMat);
@@ -599,7 +611,6 @@ class Game3D {
     this.scene.add(ocean);
     this.mapObjects.push(ocean);
 
-    // Palmeras y Rocas
     for (let i = 0; i < 28; i++) {
       const x = (Math.random() - 0.5) * 160;
       const z = (Math.random() - 0.5) * 160;
@@ -624,7 +635,6 @@ class Game3D {
     this.scene.add(ground);
     this.mapObjects.push(ground);
 
-    // Rascacielos con ventanas de neón
     for (let i = 0; i < 22; i++) {
       const h = 12 + Math.random() * 26;
       const w = 8 + Math.random() * 8;
@@ -652,7 +662,6 @@ class Game3D {
     this.scene.add(ground);
     this.mapObjects.push(ground);
 
-    // Ríos de lava brillante
     const lava = new THREE.Mesh(new THREE.PlaneGeometry(160, 20), new THREE.MeshBasicMaterial({ color: 0xff3300 }));
     lava.rotation.x = -Math.PI / 2;
     lava.position.y = 0.05;
@@ -669,7 +678,6 @@ class Game3D {
     this.scene.add(floor);
     this.mapObjects.push(floor);
 
-    // Ring central
     const ringPlat = new THREE.Mesh(new THREE.BoxGeometry(12, 0.8, 12), new THREE.MeshStandardMaterial({ color: 0x1e3a8a }));
     ringPlat.position.y = 0.4;
     this.scene.add(ringPlat);
@@ -701,7 +709,8 @@ class Game3D {
       const enemy = new PelonEnemy3D(this.scene, i, pos, isBoss);
       this.enemies.push(enemy);
     }
-    document.getElementById('alive-count').textContent = this.enemies.length + 1;
+    const aliveEl = document.getElementById('alive-count');
+    if (aliveEl) aliveEl.textContent = this.enemies.length + 1;
   }
 
   spawnLootChests() {
@@ -717,9 +726,6 @@ class Game3D {
     });
   }
 
-  // ==========================================
-  // VIEWMODELS DE ARMAS
-  // ==========================================
   initWeaponViewModels() {
     this.weaponGroup = new THREE.Group();
     this.camera.add(this.weaponGroup);
@@ -803,9 +809,6 @@ class Game3D {
     if (mAttackIcon) mAttackIcon.textContent = WEAPONS_DATA[weaponId].icon;
   }
 
-  // ==========================================
-  // DISPARO Y ACCIONES
-  // ==========================================
   executeAttack() {
     if (!this.canAttack) return;
     const w = WEAPONS_DATA[this.activeWeapon];
@@ -818,7 +821,6 @@ class Game3D {
     this.canAttack = false;
     this.attackCooldown = w.cooldown;
 
-    // Retroceso visual
     this.weaponGroup.position.z += 0.08;
     setTimeout(() => { this.weaponGroup.position.z = 0; }, 70);
 
@@ -829,12 +831,10 @@ class Game3D {
       if (w.id === 'gloves') this.sound.playPunch('hook');
       else this.sound.playBatHit();
       this.vibrate(20);
-
       this.checkHitEnemies(raycaster, w, 1);
     } else if (w.type === 'hitscan' || w.type === 'shotgun') {
       if (w.id === 'pistol') { this.sound.playPistolShot(); this.vibrate(25); }
       else { this.sound.playShotgunShot(); this.vibrate([35, 15, 35]); }
-
       const count = w.type === 'shotgun' ? 8 : 1;
       this.checkHitEnemies(raycaster, w, count);
     } else if (w.type === 'projectile') {
@@ -852,7 +852,6 @@ class Game3D {
       const r = new THREE.Raycaster();
       r.setFromCamera(new THREE.Vector2((Math.random() - 0.5) * spread, (Math.random() - 0.5) * spread), this.camera);
 
-      // Comprobar cofres
       this.chests.forEach(c => {
         if (!c.opened) {
           const hits = r.intersectObject(c.mesh, true);
@@ -862,7 +861,6 @@ class Game3D {
         }
       });
 
-      // Comprobar Pelones
       for (let enemy of this.enemies) {
         if (enemy.isDead) continue;
         const hits = r.intersectObjects([enemy.headMesh, enemy.torsoMesh, enemy.baseMesh], true);
@@ -872,7 +870,6 @@ class Game3D {
           const dmg = Math.round(weapon.damage * (isHead ? weapon.critMultiplier : 1.0));
           const dir = this.camera.getWorldDirection(new THREE.Vector3());
           enemy.applyHit(hit.point, dir.multiplyScalar(isHead ? 20 : 10), dmg);
-
           this.onDamageDealt(dmg, isHead, enemy);
           break;
         }
@@ -889,7 +886,6 @@ class Game3D {
     rMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
     rMesh.position.copy(this.camera.position).addScaledVector(dir, 0.8);
     this.scene.add(rMesh);
-
     this.projectiles.push({ mesh: rMesh, velocity: dir.multiplyScalar(35), life: 3.0, type: 'rocket' });
   }
 
@@ -924,7 +920,6 @@ class Game3D {
     const gMesh = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 12), new THREE.MeshStandardMaterial({ color: 0x225522 }));
     gMesh.position.copy(this.camera.position).addScaledVector(dir, 0.6);
     this.scene.add(gMesh);
-
     this.projectiles.push({ mesh: gMesh, velocity: dir.multiplyScalar(20).add(new THREE.Vector3(0, 6, 0)), life: 1.6, type: 'grenade' });
   }
 
@@ -945,7 +940,6 @@ class Game3D {
     this.sound.playExplosion();
     this.vibrate([60, 40, 90]);
 
-    // Daño radial a enemigos
     this.enemies.forEach(e => {
       if (!e.isDead) {
         const dist = e.root.position.distanceTo(pos);
@@ -959,7 +953,6 @@ class Game3D {
       }
     });
 
-    // Daño al jugador si está cerca
     const distToP = this.playerPos.distanceTo(pos);
     if (distToP <= radius) {
       const pDmg = Math.round(damage * 0.4 * (1.0 - distToP / radius));
@@ -982,8 +975,10 @@ class Game3D {
 
   onDamageDealt(dmg, isCrit, enemy) {
     const ch = document.getElementById('crosshair');
-    ch.classList.add('hit');
-    setTimeout(() => ch.classList.remove('hit'), 75);
+    if (ch) {
+      ch.classList.add('hit');
+      setTimeout(() => ch.classList.remove('hit'), 75);
+    }
 
     this.score += dmg * 10;
     this.coins += Math.max(1, Math.round(dmg / 6));
@@ -999,6 +994,7 @@ class Game3D {
 
   addKillfeed(msg) {
     const feed = document.getElementById('killfeed');
+    if (!feed) return;
     const entry = document.createElement('div');
     entry.className = 'kill-entry';
     entry.textContent = `💀 ${msg}`;
@@ -1008,7 +1004,8 @@ class Game3D {
 
   checkRemainingEnemies() {
     const alive = this.enemies.filter(e => !e.isDead).length;
-    document.getElementById('alive-count').textContent = alive + 1;
+    const aliveEl = document.getElementById('alive-count');
+    if (aliveEl) aliveEl.textContent = alive + 1;
 
     if (alive === 0 && this.currentMode === 'royale') {
       this.triggerVictory();
@@ -1018,11 +1015,14 @@ class Game3D {
   triggerVictory() {
     this.sound.playVictoryFanfare();
     this.vibrate([80, 50, 120, 50, 200]);
-    document.getElementById('v-kills').textContent = this.kills;
-    document.getElementById('v-damage').textContent = this.score;
+    const vK = document.getElementById('v-kills');
+    const vD = document.getElementById('v-damage');
+    if (vK) vK.textContent = this.kills;
+    if (vD) vD.textContent = this.score;
     this.coins += 500;
     localStorage.setItem('boxeo_coins', this.coins);
-    document.getElementById('victory-modal').classList.remove('hidden');
+    const vModal = document.getElementById('victory-modal');
+    if (vModal) vModal.classList.remove('hidden');
   }
 
   takePlayerDamage(amount) {
@@ -1043,21 +1043,22 @@ class Game3D {
   }
 
   triggerGameOver() {
-    document.getElementById('go-kills').textContent = this.kills;
-    document.getElementById('go-coins').textContent = `+${this.kills * 20}🪙`;
-    document.getElementById('gameover-modal').classList.remove('hidden');
+    const goK = document.getElementById('go-kills');
+    const goC = document.getElementById('go-coins');
+    if (goK) goK.textContent = this.kills;
+    if (goC) goC.textContent = `+${this.kills * 20}🪙`;
+    const goModal = document.getElementById('gameover-modal');
+    if (goModal) goModal.classList.remove('hidden');
   }
 
   setBanner(msg) {
     const b = document.getElementById('status-banner');
+    if (!b) return;
     b.textContent = msg;
     b.style.transform = 'translateX(-50%) scale(1.1)';
     setTimeout(() => { b.style.transform = 'translateX(-50%) scale(1)'; }, 200);
   }
 
-  // ==========================================
-  // EVENTOS Y CONTROLES
-  // ==========================================
   initEvents() {
     window.addEventListener('resize', () => {
       this.camera.aspect = window.innerWidth / window.innerHeight;
@@ -1071,7 +1072,6 @@ class Game3D {
         const list = ['gloves', 'bat', 'pistol', 'shotgun', 'rpg', 'laser', 'grenade', 'medkit'];
         this.setWeapon(list[parseInt(e.key) - 1]);
       } else if (e.code === 'KeyE') {
-        // Abrir cofre más cercano
         this.chests.forEach(c => {
           if (!c.opened && c.mesh.position.distanceTo(this.playerPos) < 5) {
             this.openChest(c);
@@ -1090,7 +1090,10 @@ class Game3D {
 
     document.addEventListener('pointerlockchange', () => {
       this.isPointerLocked = (document.pointerLockElement === this.container);
-      document.getElementById('pause-overlay').classList.toggle('hidden', this.isPointerLocked || window.innerWidth <= 768);
+      const pauseOverlay = document.getElementById('pause-overlay');
+      if (pauseOverlay) {
+        pauseOverlay.classList.toggle('hidden', this.isPointerLocked || window.innerWidth <= 768);
+      }
     });
 
     window.addEventListener('mousemove', (e) => {
@@ -1108,39 +1111,46 @@ class Game3D {
       }
     });
 
-    // Selector de armas
     document.querySelectorAll('.weapon-slot').forEach(s => {
       s.addEventListener('click', () => this.setWeapon(s.dataset.weapon));
     });
 
-    // Controles táctiles
     this.initTouchControls();
 
-    // Modales y menús
-    document.getElementById('btn-open-maps').addEventListener('click', () => document.getElementById('maps-modal').classList.remove('hidden'));
-    document.getElementById('btn-close-maps').addEventListener('click', () => document.getElementById('maps-modal').classList.add('hidden'));
+    const btnMaps = document.getElementById('btn-open-maps');
+    const btnCloseMaps = document.getElementById('btn-close-maps');
+    if (btnMaps) btnMaps.addEventListener('click', () => document.getElementById('maps-modal').classList.remove('hidden'));
+    if (btnCloseMaps) btnCloseMaps.addEventListener('click', () => document.getElementById('maps-modal').classList.add('hidden'));
 
-    document.getElementById('btn-open-modes').addEventListener('click', () => document.getElementById('modes-modal').classList.remove('hidden'));
-    document.getElementById('btn-close-modes').addEventListener('click', () => document.getElementById('modes-modal').classList.add('hidden'));
+    const btnModes = document.getElementById('btn-open-modes');
+    const btnCloseModes = document.getElementById('btn-close-modes');
+    if (btnModes) btnModes.addEventListener('click', () => document.getElementById('modes-modal').classList.remove('hidden'));
+    if (btnCloseModes) btnCloseModes.addEventListener('click', () => document.getElementById('modes-modal').classList.add('hidden'));
 
-    document.getElementById('btn-open-shop').addEventListener('click', () => {
+    const btnShop = document.getElementById('btn-open-shop');
+    const btnCloseShop = document.getElementById('btn-close-shop');
+    if (btnShop) btnShop.addEventListener('click', () => {
       document.getElementById('shop-modal').classList.remove('hidden');
-      document.getElementById('shop-coins-display').textContent = this.coins.toLocaleString();
+      const sc = document.getElementById('shop-coins-display');
+      if (sc) sc.textContent = this.coins.toLocaleString();
     });
-    document.getElementById('btn-close-shop').addEventListener('click', () => document.getElementById('shop-modal').classList.add('hidden'));
+    if (btnCloseShop) btnCloseShop.addEventListener('click', () => document.getElementById('shop-modal').classList.add('hidden'));
 
-    document.getElementById('btn-start-game').addEventListener('click', () => {
+    const btnStart = document.getElementById('btn-start-game');
+    if (btnStart) btnStart.addEventListener('click', () => {
       document.getElementById('start-overlay').classList.add('hidden');
       this.sound.init();
       this.sound.playBell();
     });
 
-    document.getElementById('btn-restart-royale').addEventListener('click', () => {
+    const btnRestart = document.getElementById('btn-restart-royale');
+    if (btnRestart) btnRestart.addEventListener('click', () => {
       document.getElementById('victory-modal').classList.add('hidden');
       this.loadMap(this.currentMap);
     });
 
-    document.getElementById('btn-respawn').addEventListener('click', () => {
+    const btnRespawn = document.getElementById('btn-respawn');
+    if (btnRespawn) btnRespawn.addEventListener('click', () => {
       document.getElementById('gameover-modal').classList.add('hidden');
       this.hp = 100;
       this.shield = 100;
@@ -1148,14 +1158,14 @@ class Game3D {
       this.updateHUD();
     });
 
-    document.getElementById('btn-spawn-enemy').addEventListener('click', () => {
+    const btnSpawnEnemy = document.getElementById('btn-spawn-enemy');
+    if (btnSpawnEnemy) btnSpawnEnemy.addEventListener('click', () => {
       const p = this.playerPos.clone().add(new THREE.Vector3((Math.random() - 0.5) * 10, 0, (Math.random() - 0.5) * 10));
       this.enemies.push(new PelonEnemy3D(this.scene, this.enemies.length + 1, p));
       this.checkRemainingEnemies();
       this.setBanner('➕ ¡Nuevo Pelón enemigo generado!');
     });
 
-    // Selector de mapas modal
     document.querySelectorAll('.map-card').forEach(c => {
       c.addEventListener('click', () => {
         document.querySelectorAll('.map-card').forEach(mc => mc.classList.remove('active'));
@@ -1165,24 +1175,27 @@ class Game3D {
       });
     });
 
-    // Selector de modos modal
     document.querySelectorAll('.mode-card').forEach(m => {
       m.addEventListener('click', () => {
         document.querySelectorAll('.mode-card').forEach(mc => mc.classList.remove('active'));
         m.classList.add('active');
         this.currentMode = m.dataset.mode;
-        document.getElementById('current-mode-label').textContent = m.querySelector('.mode-title').textContent.split(' ')[0];
+        const lbl = document.getElementById('current-mode-label');
+        if (lbl) lbl.textContent = m.querySelector('.mode-title').textContent.split(' ')[0];
         document.getElementById('modes-modal').classList.add('hidden');
         this.loadMap(this.currentMap);
       });
     });
 
-    document.getElementById('btn-sound').addEventListener('click', () => {
+    const btnSound = document.getElementById('btn-sound');
+    if (btnSound) btnSound.addEventListener('click', () => {
       const on = this.sound.toggle();
-      document.getElementById('sound-icon').textContent = on ? '🔊' : '🔇';
+      const sIcon = document.getElementById('sound-icon');
+      if (sIcon) sIcon.textContent = on ? '🔊' : '🔇';
     });
 
-    document.getElementById('btn-fullscreen').addEventListener('click', () => {
+    const btnFs = document.getElementById('btn-fullscreen');
+    if (btnFs) btnFs.addEventListener('click', () => {
       if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
       else document.exitFullscreen().catch(() => {});
     });
@@ -1191,6 +1204,8 @@ class Game3D {
   initTouchControls() {
     const zone = document.getElementById('joystick-zone');
     const stick = document.getElementById('joystick-stick');
+    if (!zone || !stick) return;
+
     let touchId = null, startX = 0, startY = 0;
 
     zone.addEventListener('touchstart', (e) => {
@@ -1228,29 +1243,29 @@ class Game3D {
     zone.addEventListener('touchend', resetStick);
     zone.addEventListener('touchcancel', resetStick);
 
-    // Look Touch
     const lookZone = document.getElementById('touch-look-zone');
-    let lookId = null, lastX = 0, lastY = 0;
-    lookZone.addEventListener('touchstart', (e) => {
-      const t = e.changedTouches[0];
-      lookId = t.identifier;
-      lastX = t.clientX; lastY = t.clientY;
-    }, { passive: true });
+    if (lookZone) {
+      let lookId = null, lastX = 0, lastY = 0;
+      lookZone.addEventListener('touchstart', (e) => {
+        const t = e.changedTouches[0];
+        lookId = t.identifier;
+        lastX = t.clientX; lastY = t.clientY;
+      }, { passive: true });
 
-    lookZone.addEventListener('touchmove', (e) => {
-      for (let i = 0; i < e.changedTouches.length; i++) {
-        const t = e.changedTouches[i];
-        if (t.identifier === lookId) {
-          this.cameraYaw -= (t.clientX - lastX) * 0.0055;
-          this.cameraPitch -= (t.clientY - lastY) * 0.0055;
-          this.cameraPitch = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, this.cameraPitch));
-          lastX = t.clientX; lastY = t.clientY;
+      lookZone.addEventListener('touchmove', (e) => {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          const t = e.changedTouches[i];
+          if (t.identifier === lookId) {
+            this.cameraYaw -= (t.clientX - lastX) * 0.0055;
+            this.cameraPitch -= (t.clientY - lastY) * 0.0055;
+            this.cameraPitch = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, this.cameraPitch));
+            lastX = t.clientX; lastY = t.clientY;
+          }
         }
-      }
-    }, { passive: true });
-    lookZone.addEventListener('touchend', () => { lookId = null; });
+      }, { passive: true });
+      lookZone.addEventListener('touchend', () => { lookId = null; });
+    }
 
-    // Botones móviles
     const mAtk = document.getElementById('m-btn-attack');
     const mJmp = document.getElementById('m-btn-jump');
     const mChest = document.getElementById('m-btn-chest');
@@ -1273,9 +1288,6 @@ class Game3D {
     }, { passive: false });
   }
 
-  // ==========================================
-  // LOOP PRINCIPAL Y MINIMAPA
-  // ==========================================
   loop(time) {
     const dt = Math.min((time - this.lastTime) / 1000, 0.1);
     this.lastTime = time;
@@ -1293,7 +1305,6 @@ class Game3D {
       if (this.attackCooldown <= 0) this.canAttack = true;
     }
 
-    // Tormenta Battle Royale
     if (this.currentMode === 'royale') {
       this.stormTimer -= dt;
       if (this.stormTimer <= 0) {
@@ -1301,30 +1312,25 @@ class Game3D {
         this.stormPhase++;
         this.targetStormRadius = Math.max(8, this.targetStormRadius * 0.65);
       }
-      document.getElementById('storm-timer').textContent = `0:${Math.ceil(this.stormTimer).toString().padStart(2, '0')}`;
+      const st = document.getElementById('storm-timer');
+      if (st) st.textContent = `0:${Math.ceil(this.stormTimer).toString().padStart(2, '0')}`;
 
-      // Encoger radio
       if (this.stormRadius > this.targetStormRadius) {
         this.stormRadius -= 2.5 * dt;
-        this.stormMesh.scale.set(this.stormRadius / 120, 1, this.stormRadius / 120);
+        if (this.stormMesh) this.stormMesh.scale.set(this.stormRadius / 120, 1, this.stormRadius / 120);
       }
 
-      // Daño por tormenta
       const distToStormCenter = Math.hypot(this.playerPos.x - this.stormCenter.x, this.playerPos.z - this.stormCenter.z);
       const isOutside = distToStormCenter > this.stormRadius;
-      document.getElementById('storm-warning').classList.toggle('hidden', !isOutside);
+      const warn = document.getElementById('storm-warning');
+      if (warn) warn.classList.toggle('hidden', !isOutside);
       if (isOutside) {
         this.takePlayerDamage(4 * dt);
       }
     }
 
-    // Movimiento Jugador
     this.updatePlayer(dt);
-
-    // Actualizar Enemigos
     this.enemies.forEach(e => e.update(dt, this.playerPos, this.stormRadius, this.stormCenter));
-
-    // Proyectiles
     this.updateProjectiles(dt);
   }
 
@@ -1396,6 +1402,7 @@ class Game3D {
   }
 
   renderMinimap() {
+    if (!this.minimapCtx) return;
     const ctx = this.minimapCtx;
     const w = 110, h = 110;
     ctx.clearRect(0, 0, w, h);
@@ -1403,14 +1410,12 @@ class Game3D {
     const scale = 0.45;
     const cx = w / 2, cy = h / 2;
 
-    // Tormenta
     ctx.strokeStyle = '#a855f7';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(cx, cy, (this.stormRadius * scale), 0, Math.PI * 2);
     ctx.stroke();
 
-    // Cofres
     ctx.fillStyle = '#ffd200';
     this.chests.forEach(c => {
       if (!c.opened) {
@@ -1420,7 +1425,6 @@ class Game3D {
       }
     });
 
-    // Enemigos
     ctx.fillStyle = '#ff2a4b';
     this.enemies.forEach(e => {
       if (!e.isDead) {
@@ -1432,7 +1436,6 @@ class Game3D {
       }
     });
 
-    // Jugador (Punto cyan central con flecha de dirección)
     ctx.fillStyle = '#00d2ff';
     ctx.beginPath();
     ctx.arc(cx, cy, 4, 0, Math.PI * 2);
@@ -1447,22 +1450,29 @@ class Game3D {
   }
 
   updateHUD() {
-    document.getElementById('score-display').textContent = this.score.toLocaleString();
-    document.getElementById('coins-display').textContent = this.coins.toLocaleString();
-    document.getElementById('kills-count').textContent = this.kills;
+    const sD = document.getElementById('score-display');
+    const cD = document.getElementById('coins-display');
+    const kC = document.getElementById('kills-count');
+    if (sD) sD.textContent = this.score.toLocaleString();
+    if (cD) cD.textContent = this.coins.toLocaleString();
+    if (kC) kC.textContent = this.kills;
 
-    // Salud & Escudo
     const hpPct = Math.max(0, (this.hp / this.maxHp) * 100);
-    document.getElementById('hp-fill').style.width = `${hpPct}%`;
-    document.getElementById('hp-val-text').textContent = `${Math.round(this.hp)} / ${this.maxHp}`;
+    const hpF = document.getElementById('hp-fill');
+    const hpT = document.getElementById('hp-val-text');
+    if (hpF) hpF.style.width = `${hpPct}%`;
+    if (hpT) hpT.textContent = `${Math.round(this.hp)} / ${this.maxHp}`;
 
     const shPct = Math.max(0, (this.shield / this.maxShield) * 100);
-    document.getElementById('shield-fill').style.width = `${shPct}%`;
-    document.getElementById('shield-val-text').textContent = `${Math.round(this.shield)} / ${this.maxShield}`;
+    const shF = document.getElementById('shield-fill');
+    const shT = document.getElementById('shield-val-text');
+    if (shF) shF.style.width = `${shPct}%`;
+    if (shT) shT.textContent = `${Math.round(this.shield)} / ${this.maxShield}`;
   }
 
   initShop() {
     const wGrid = document.getElementById('weapons-grid');
+    if (!wGrid) return;
     wGrid.innerHTML = '';
     Object.values(WEAPONS_DATA).forEach(w => {
       const card = document.createElement('div');
