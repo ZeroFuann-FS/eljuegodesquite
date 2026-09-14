@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#0f111a">
+  <meta name="theme-color" content="#0a0d18">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Desquite 3D">
+  <meta name="apple-mobile-web-app-title" content="Pelon Royale 3D">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="description" content="El Desquite 3D: FPS & Sandbox del Pelón - Muévete libremente, golpea y dispara con armas al muñeco pelón en 3D">
+  <meta name="description" content="El Desquite 3D: Battle Royale del Pelón - Sobrevive en múltiples mapas 3D contra hordas de Pelones con armas y físicas">
 
-  <title>El Desquite 3D: FPS & Sandbox del Pelón 🥊🔫👨‍🦲</title>
+  <title>El Desquite 3D: Battle Royale del Pelón 🏆🏝️🔫👨‍🦲</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Outfit:wght@400;600;700;900&display=swap" rel="stylesheet">
   
   <!-- Three.js 3D Engine -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -23,10 +23,10 @@
 </head>
 <body>
   <div id="game-wrapper">
-    <!-- Contenedor del Canvas 3D -->
+    <!-- Viewport Three.js -->
     <div id="threejs-container"></div>
 
-    <!-- Mira Central (Crosshair) -->
+    <!-- Mira FPS (Crosshair) -->
     <div id="crosshair" class="crosshair">
       <div class="ch-dot"></div>
       <div class="ch-line ch-top"></div>
@@ -35,62 +35,103 @@
       <div class="ch-line ch-right"></div>
     </div>
 
-    <!-- HUD Superior -->
-    <header id="hud-top">
-      <div class="hud-box score-box">
-        <span class="hud-label">PUNTOS</span>
-        <span id="score-display" class="hud-value">0</span>
+    <!-- HUD SUPERIOR BATTLE ROYALE (Clean & Sleek) -->
+    <header id="br-hud-top">
+      <!-- Minimapa Circular -->
+      <div class="minimap-container">
+        <canvas id="minimap-canvas" width="110" height="110"></canvas>
+        <span class="minimap-label" id="map-name-label">🏝️ Isla Royale</span>
       </div>
 
-      <div class="hud-center">
-        <div class="health-container">
-          <div class="health-header">
-            <span class="pelon-name">👨‍🦲 EL PELÓN 3D</span>
-            <span id="hp-text">100%</span>
-          </div>
-          <div class="bar-outer hp-bar">
-            <div id="hp-fill" class="bar-fill" style="width: 100%;"></div>
-          </div>
+      <!-- Estado de la Partida Central -->
+      <div class="match-status-center">
+        <!-- Brújula / Radar -->
+        <div class="compass-bar" id="compass-bar">
+          <span class="comp-point">N</span>
+          <span class="comp-point">E</span>
+          <span class="comp-point">S</span>
+          <span class="comp-point">O</span>
         </div>
 
-        <div class="rage-container">
-          <div class="rage-header">
-            <span class="rage-label">⚡ FURIA (ESPACIO / BOTÓN)</span>
-            <span id="rage-text">0%</span>
+        <div class="br-stat-pills">
+          <div class="stat-pill alive-pill">
+            <span class="pill-icon">👥</span>
+            <span class="pill-title">VIVOS:</span>
+            <span id="alive-count" class="pill-val">15</span>
           </div>
-          <div class="bar-outer rage-bar">
-            <div id="rage-fill" class="bar-fill" style="width: 0%;"></div>
+          <div class="stat-pill kills-pill">
+            <span class="pill-icon">💀</span>
+            <span class="pill-title">KILLS:</span>
+            <span id="kills-count" class="pill-val">0</span>
+          </div>
+          <div class="stat-pill storm-pill" id="storm-timer-pill">
+            <span class="pill-icon">⚡</span>
+            <span class="pill-title">ZONA:</span>
+            <span id="storm-timer" class="pill-val">0:45</span>
           </div>
         </div>
       </div>
 
-      <div class="hud-box coins-box">
-        <span class="hud-label">MONEDAS</span>
-        <span class="coins-val"><span class="coin-icon">🪙</span> <span id="coins-display">0</span></span>
+      <!-- Monedas y Puntuación -->
+      <div class="economy-box">
+        <div class="coins-pill">
+          <span>🪙</span>
+          <span id="coins-display">0</span>
+        </div>
+        <div class="score-pill">
+          <small>PTS</small>
+          <span id="score-display">0</span>
+        </div>
       </div>
     </header>
 
-    <!-- Banner de Notificación -->
-    <div id="status-banner" class="status-banner">¡ACÉRCATE AL PELÓN Y DALE CON TODO!</div>
+    <!-- Killfeed en la esquina superior derecha -->
+    <div id="killfeed" class="killfeed"></div>
 
-    <!-- Indicador de Combo -->
-    <div id="combo-hud" class="combo-hud hidden">
-      <div id="combo-number" class="combo-num">0</div>
-      <div class="combo-sub">HITS COMBO!</div>
-      <div id="combo-rank" class="combo-rank">¡BUENO!</div>
+    <!-- Alerta de Tormenta / Zona de Peligro -->
+    <div id="storm-warning" class="storm-warning hidden">
+      ⚠️ ¡CUIDADO! ESTÁS FUERA DE LA ZONA SEGURA ⚠️
     </div>
 
-    <!-- Selector de Armas Rápido (Quick Weapon Bar) -->
+    <!-- Notificaciones Flotantes del Juego -->
+    <div id="status-banner" class="status-banner">¡ENCUENTRA COFRES Y ELIMINA A LOS PELONES!</div>
+
+    <!-- HUD INFERIOR IZQUIERDO: Salud y Escudo del Jugador -->
+    <div id="player-bars-hud" class="player-bars-hud">
+      <!-- Escudo -->
+      <div class="bar-unit shield-unit">
+        <div class="bar-info">
+          <span class="unit-icon">🛡️ ESCUDO</span>
+          <span id="shield-val-text">100 / 100</span>
+        </div>
+        <div class="bar-track">
+          <div id="shield-fill" class="bar-progress shield-fill" style="width: 100%;"></div>
+        </div>
+      </div>
+
+      <!-- Salud -->
+      <div class="bar-unit health-unit">
+        <div class="bar-info">
+          <span class="unit-icon">❤️ SALUD</span>
+          <span id="hp-val-text">100 / 100</span>
+        </div>
+        <div class="bar-track">
+          <div id="hp-fill" class="bar-progress hp-fill" style="width: 100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barra Rápida de Armas / Inventario (Clean Weapon Bar) -->
     <div id="weapon-bar" class="weapon-bar">
-      <button class="weapon-slot active" data-weapon="gloves" title="1. Guantes de Boxeo">
+      <button class="weapon-slot active" data-weapon="gloves" title="1. Guantes">
         <span class="weapon-icon">🥊</span>
         <span class="weapon-key">1</span>
       </button>
-      <button class="weapon-slot" data-weapon="bat" title="2. Bate de Béisbol">
+      <button class="weapon-slot" data-weapon="bat" title="2. Bate">
         <span class="weapon-icon">🏏</span>
         <span class="weapon-key">2</span>
       </button>
-      <button class="weapon-slot" data-weapon="pistol" title="3. Pistola Táctica">
+      <button class="weapon-slot" data-weapon="pistol" title="3. Pistola">
         <span class="weapon-icon">🔫</span>
         <span class="weapon-key">3</span>
       </button>
@@ -98,116 +139,177 @@
         <span class="weapon-icon">💥</span>
         <span class="weapon-key">4</span>
       </button>
-      <button class="weapon-slot" data-weapon="rpg" title="5. Lanzacohetes RPG">
+      <button class="weapon-slot" data-weapon="rpg" title="5. RPG">
         <span class="weapon-icon">🚀</span>
         <span class="weapon-key">5</span>
       </button>
-      <button class="weapon-slot" data-weapon="laser" title="6. Rifle Láser">
+      <button class="weapon-slot" data-weapon="laser" title="6. Láser">
         <span class="weapon-icon">⚡</span>
         <span class="weapon-key">6</span>
       </button>
-      <button class="weapon-slot" data-weapon="grenade" title="7. Granadas TNT">
+      <button class="weapon-slot" data-weapon="grenade" title="7. TNT">
         <span class="weapon-icon">💣</span>
         <span class="weapon-key">7</span>
       </button>
+      <button class="weapon-slot" data-weapon="medkit" title="8. Botiquín">
+        <span class="weapon-icon">🧪</span>
+        <span class="weapon-key">8</span>
+      </button>
     </div>
 
-    <!-- CONTROLES TÁCTILES PARA CELULAR (Mobile On-Screen Controls) -->
+    <!-- CONTROLES TÁCTILES MÓVILES (Clean Virtual Touch Overlay) -->
     <div id="mobile-controls-layer" class="mobile-controls-layer">
-      <!-- Joystick Izquierdo para Moverse (WASD) -->
+      <!-- Joystick Izquierdo para Moverse -->
       <div id="joystick-zone" class="joystick-zone">
         <div id="joystick-base" class="joystick-base">
           <div id="joystick-stick" class="joystick-stick"></div>
         </div>
       </div>
 
-      <!-- Zona Derecha para Girar Cámara -->
+      <!-- Zona Táctil Derecha para Apuntar / Rotar Cámara -->
       <div id="touch-look-zone" class="touch-look-zone"></div>
 
-      <!-- Botones de Acción Táctiles -->
-      <div class="mobile-action-buttons">
-        <button id="m-btn-jump" class="m-action-btn jump-btn" aria-label="Saltar">
+      <!-- Botones de Acción Táctiles Ergonómicos -->
+      <div class="mobile-action-cluster">
+        <button id="m-btn-jump" class="m-touch-btn jump-touch" aria-label="Saltar">
           <span>🦘</span>
-          <small>SALTAR</small>
+          <small>SALTO</small>
         </button>
 
-        <button id="m-btn-tnt" class="m-action-btn tnt-btn" aria-label="Spawn TNT">
+        <button id="m-btn-tnt" class="m-touch-btn tnt-touch" aria-label="Spawn TNT">
           <span>💣</span>
           <small>+TNT</small>
         </button>
 
-        <button id="m-btn-rage" class="m-action-btn rage-btn" aria-label="Furia">
-          <span>🔥</span>
-          <small>FURIA</small>
+        <button id="m-btn-chest" class="m-touch-btn chest-touch" aria-label="Abrir Cofre">
+          <span>🎁</span>
+          <small>ABRIR</small>
         </button>
 
-        <button id="m-btn-attack" class="m-action-btn attack-btn" aria-label="Atacar / Disparar">
+        <button id="m-btn-attack" class="m-touch-btn attack-touch" aria-label="Disparar / Atacar">
           <span id="m-attack-icon">🥊</span>
-          <small>ATACAR</small>
+          <small>FUEGO</small>
         </button>
       </div>
     </div>
 
-    <!-- HUD Inferior con Botones de Configuración / Menús -->
-    <footer id="hud-bottom">
-      <div class="controls-hint">
-        <span>🎮 <b>WASD:</b> Moverse</span>
-        <span><b>Ratón:</b> Mirar / Disparar</span>
-        <span><b>Espacio:</b> Saltar</span>
-        <span><b>1-7 / Rueda:</b> Armas</span>
-        <span><b>G:</b> Spawn TNT</span>
-      </div>
-
-      <div class="action-buttons">
-        <button id="btn-spawn-tnt" class="hud-btn tnt-hud-btn" title="Generar barril de dinamita">
-          <span class="btn-icon">💣</span>
-          <span>+Barril TNT</span>
+    <!-- BARRA INFERIOR DE MENÚS Y AJUSTES -->
+    <footer id="hud-bottom-bar">
+      <div class="quick-nav-pills">
+        <button id="btn-open-maps" class="hud-pill-btn" title="Cambiar Paisaje / Mapa">
+          <span>🗺️ Mapas</span>
         </button>
 
-        <button id="btn-gravity" class="hud-btn grav-btn" title="Cambiar gravedad">
-          <span class="btn-icon">🌍</span>
-          <span id="grav-text">Gravedad: 1x</span>
+        <button id="btn-open-modes" class="hud-pill-btn" title="Modos de Juego">
+          <span>🏆 Modo: <b id="current-mode-label">Battle Royale</b></span>
         </button>
 
-        <button id="btn-shop" class="hud-btn shop-btn" title="Tienda de Armas y Accesorios">
-          <span class="btn-icon">🏪</span>
-          <span>Tienda</span>
+        <button id="btn-spawn-enemy" class="hud-pill-btn" title="Generar Pelón Enemigo">
+          <span>➕ Pelón</span>
         </button>
 
-        <button id="btn-reset" class="hud-btn reset-btn" title="Reaparecer / Curar Pelón">
-          <span class="btn-icon">🩹</span>
-          <span>Curar</span>
+        <button id="btn-open-shop" class="hud-pill-btn shop-pill" title="Tienda de Armas y Mejoras">
+          <span>🏪 Tienda</span>
         </button>
 
-        <button id="btn-sound" class="hud-btn sound-btn" title="Sonido">
-          <span id="sound-icon" class="btn-icon">🔊</span>
+        <button id="btn-sound" class="hud-pill-btn sound-pill" title="Sonido">
+          <span id="sound-icon">🔊</span>
         </button>
 
-        <button id="btn-fullscreen" class="hud-btn fullscreen-btn" title="Pantalla Completa">
-          <span class="btn-icon">⛶</span>
+        <button id="btn-fullscreen" class="hud-pill-btn fs-pill" title="Pantalla Completa">
+          <span>⛶</span>
         </button>
       </div>
     </footer>
 
-    <!-- Modal de la Tienda 3D -->
+    <!-- MODAL DE SELECCIÓN DE MAPAS / PAISAJES -->
+    <div id="maps-modal" class="modal-backdrop hidden">
+      <div class="modal-content maps-modal-card">
+        <div class="modal-header">
+          <h2>🗺️ ELIGE TU PAISAJE</h2>
+          <button id="btn-close-maps" class="close-btn">&times;</button>
+        </div>
+        <div class="maps-grid">
+          <div class="map-card active" data-map="island">
+            <div class="map-icon">🏝️</div>
+            <div class="map-title">Isla Battle Royale</div>
+            <div class="map-desc">Terreno gigante con colinas, palmeras, costa, búnkeres y cofres de botín.</div>
+            <button class="select-map-btn">SELECCIONADO</button>
+          </div>
+          <div class="map-card" data-map="city">
+            <div class="map-icon">🏙️</div>
+            <div class="map-title">Ciudad Cyberpunk</div>
+            <div class="map-desc">Rascacielos con luces de neón, contenedores y callejones de combate urbano.</div>
+            <button class="select-map-btn">JUGAR MAPA</button>
+          </div>
+          <div class="map-card" data-map="volcano">
+            <div class="map-icon">🌋</div>
+            <div class="map-title">Volcán de Magma</div>
+            <div class="map-desc">Ríos de lava incandescente, columnas de basalto y fuego abrasador.</div>
+            <button class="select-map-btn">JUGAR MAPA</button>
+          </div>
+          <div class="map-card" data-map="ring">
+            <div class="map-icon">🥊</div>
+            <div class="map-title">Ring Clásico</div>
+            <div class="map-desc">La clásica arena de boxeo con focos cenitales y cuerdas elásticas.</div>
+            <button class="select-map-btn">JUGAR MAPA</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DE MODOS DE JUEGO Y ENEMIGOS -->
+    <div id="modes-modal" class="modal-backdrop hidden">
+      <div class="modal-content modes-modal-card">
+        <div class="modal-header">
+          <h2>🏆 MODOS DE JUEGO</h2>
+          <button id="btn-close-modes" class="close-btn">&times;</button>
+        </div>
+        <div class="modes-grid">
+          <div class="mode-card active" data-mode="royale">
+            <div class="mode-icon">👑</div>
+            <div class="mode-title">Battle Royale (15 Pelones)</div>
+            <div class="mode-desc">Sobrevive contra 15 Pelones armados mientras se cierra la tormenta. ¡Consigue la Victoria Royale!</div>
+            <button class="select-mode-btn">ACTIVAR</button>
+          </div>
+          <div class="mode-card" data-mode="horde">
+            <div class="mode-icon">🧟</div>
+            <div class="mode-title">Horda / Supervivencia</div>
+            <div class="mode-desc">Oleadas continuas de Pelones cada vez más rápidos y locos. ¡Sobrevive lo que puedas!</div>
+            <button class="select-mode-btn">ACTIVAR</button>
+          </div>
+          <div class="mode-card" data-mode="sandbox">
+            <div class="mode-icon">🎨</div>
+            <div class="mode-title">Sandbox Libre</div>
+            <div class="mode-desc">Sin tormenta. Genera Pelones ilimitados, barriles de TNT y prueba todas las armas.</div>
+            <button class="select-mode-btn">ACTIVAR</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DE LA TIENDA 3D Y ARSENAL -->
     <div id="shop-modal" class="modal-backdrop hidden">
       <div class="modal-content shop-modal-card">
         <div class="modal-header">
-          <h2>🏪 ARSENAL Y TIENDA 3D</h2>
+          <h2>🏪 TIENDA Y MEJORAS 3D</h2>
           <button id="btn-close-shop" class="close-btn">&times;</button>
         </div>
 
         <div class="shop-tabs">
-          <button class="shop-tab active" data-tab="weapons">🔫 Armas y Mejoras</button>
-          <button class="shop-tab" data-tab="accessories">🎭 Accesorios del Pelón</button>
+          <button class="shop-tab active" data-tab="weapons">🔫 Arsenal Legendario</button>
+          <button class="shop-tab" data-tab="perks">⚡ Mejoras de Personaje</button>
+          <button class="shop-tab" data-tab="accessories">🎭 Accesorios Pelón</button>
         </div>
 
-        <!-- Pestaña de Armas -->
         <div id="tab-weapons" class="shop-tab-content active">
           <div class="shop-grid" id="weapons-grid"></div>
         </div>
 
-        <!-- Pestaña de Accesorios -->
+        <div id="tab-perks" class="shop-tab-content">
+          <div class="shop-grid" id="perks-grid"></div>
+        </div>
+
         <div id="tab-accessories" class="shop-tab-content">
           <div class="shop-grid" id="accessories-grid"></div>
         </div>
@@ -221,34 +323,61 @@
       </div>
     </div>
 
-    <!-- Pantalla Inicial / Click para Entrar en 3D -->
+    <!-- MODAL DE VICTORIA ROYALE (#1 VICTORY ROYALE) -->
+    <div id="victory-modal" class="modal-backdrop hidden">
+      <div class="victory-card">
+        <div class="victory-banner">#1 ¡VICTORIA ROYALE!</div>
+        <div class="victory-sub">👑 ¡ERES EL REY DEL RING Y DE LA ISLA! 👑</div>
+        <div class="victory-stats">
+          <div class="v-stat-row"><span>💀 Pelones Eliminados:</span><b id="v-kills">0</b></div>
+          <div class="v-stat-row"><span>💥 Daño Total:</span><b id="v-damage">0</b></div>
+          <div class="v-stat-row"><span>🪙 Monedas de Campeón:</span><b id="v-coins" class="coin-highlight">+500</b></div>
+        </div>
+        <button id="btn-restart-royale" class="victory-btn">¡JUGAR OTRA PARTIDA! 🏆</button>
+      </div>
+    </div>
+
+    <!-- MODAL DE DERROTA (GAME OVER) -->
+    <div id="gameover-modal" class="modal-backdrop hidden">
+      <div class="gameover-card">
+        <div class="go-title">☠️ HAS SIDO ELIMINADO</div>
+        <p class="go-desc">Los Pelones te superaron o la tormenta te alcanzó.</p>
+        <div class="victory-stats">
+          <div class="v-stat-row"><span>💀 Bajas conseguidas:</span><b id="go-kills">0</b></div>
+          <div class="v-stat-row"><span>🪙 Monedas obtenidas:</span><b id="go-coins">+0</b></div>
+        </div>
+        <button id="btn-respawn" class="victory-btn">¡REAPARECER! 🥊</button>
+      </div>
+    </div>
+
+    <!-- PANTALLA INICIAL DE BIENVENIDA -->
     <div id="start-overlay" class="modal-backdrop">
       <div class="start-card">
-        <div class="title-badge">¡EXPERIENCIA 3D COMPLETA!</div>
-        <h1 class="game-title">EL DESQUITE 3D<br><span class="subtitle">FPS & SANDBOX DEL PELÓN</span></h1>
+        <div class="title-badge">¡EXPERIENCIA BATTLE ROYALE 3D!</div>
+        <h1 class="game-title">PELÓN ROYALE<br><span class="subtitle">EL DESQUITE 3D</span></h1>
         
         <div class="pelon-avatar-preview">
-          🥊🔫👨‍🦲💥🚀
+          🏝️🏆🔫👨‍🦲💥🚀
         </div>
 
         <p class="intro-desc">
-          Muévete libremente por el ring en 3D, dale de puñetazos o dispárale con pistolas, escopetas, lanzacohetes RPG, rifles láser y barriles de dinamita.
+          Lánzate a la <b>Isla Battle Royale</b>, la <b>Ciudad Cyberpunk</b> o el <b>Volcán</b>. Ármate con cofres de botín, elimina a los Pelones enemigos y sobrevive a la tormenta.
         </p>
 
         <button id="btn-start-game" class="huge-start-btn">
-          <span>¡ENTRAR AL RING 3D!</span> 🥊
+          <span>¡A LA BATALLA!</span> 🏆
         </button>
 
         <div class="instructions-pill">
-          💡 <b>En Celular:</b> Usa el joystick izquierdo para caminar, desliza a la derecha para girar la cámara y toca el botón rojo para atacar.<br>
-          💡 <b>En PC:</b> Clic en pantalla para bloquear el cursor, WASD para caminar, Clic Izquierdo para atacar, 1 al 7 para cambiar de arma.
+          💡 <b>Celular:</b> Joystick izquierdo para caminar, desliza a la derecha para apuntar, botones a la derecha para atacar y abrir cofres.<br>
+          💡 <b>PC:</b> Clic para apuntar con ratón, WASD para moverse, Clic Izq para disparar, E para abrir cofres, 1 al 8 para armas.
         </div>
       </div>
     </div>
 
-    <!-- Pausa / Desbloqueo de ratón en PC -->
+    <!-- Indicador de Pausa para PC -->
     <div id="pause-overlay" class="pause-banner hidden">
-      <span>🖱️ HAZ CLIC EN LA PANTALLA PARA CONTINUAR JUGANDO</span>
+      <span>🖱️ HAZ CLIC PARA BLOQUEAR EL RATÓN Y CONTINUAR</span>
     </div>
 
   </div>
