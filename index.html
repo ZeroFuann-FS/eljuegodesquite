@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Pelon Royale 3D">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="description" content="El Desquite 3D: Battle Royale del Pelón - Sobrevive en múltiples mapas 3D contra hordas de Pelones con armas y físicas">
+  <meta name="description" content="El Desquite 3D: Auténtico Battle Royale del Pelón - Cae en paracaídas, explora casas, recoge armas y sobrevive a la tormenta">
 
   <title>El Desquite 3D: Battle Royale del Pelón 🏆🏝️🔫👨‍🦲</title>
 
@@ -35,9 +35,14 @@
       <div class="ch-line ch-right"></div>
     </div>
 
+    <!-- Indicador de Descenso / Paracaídas -->
+    <div id="glider-status" class="glider-status hidden">
+      🪂 DESCENDIENDO EN PARACAÍDAS — DIRÍGETE A LAS CASAS Y BUSCA BOTÍN
+    </div>
+
     <!-- HUD SUPERIOR BATTLE ROYALE (Clean & Sleek) -->
     <header id="br-hud-top">
-      <!-- Minimapa Circular -->
+      <!-- Minimapa Circular con Radar -->
       <div class="minimap-container">
         <canvas id="minimap-canvas" width="110" height="110"></canvas>
         <span class="minimap-label" id="map-name-label">🏝️ Isla Royale</span>
@@ -45,11 +50,14 @@
 
       <!-- Estado de la Partida Central -->
       <div class="match-status-center">
-        <!-- Brújula / Radar -->
+        <!-- Brújula / Grados -->
         <div class="compass-bar" id="compass-bar">
           <span class="comp-point">N</span>
+          <span class="comp-point">75</span>
           <span class="comp-point">E</span>
+          <span class="comp-point">165</span>
           <span class="comp-point">S</span>
+          <span class="comp-point">255</span>
           <span class="comp-point">O</span>
         </div>
 
@@ -57,7 +65,7 @@
           <div class="stat-pill alive-pill">
             <span class="pill-icon">👥</span>
             <span class="pill-title">VIVOS:</span>
-            <span id="alive-count" class="pill-val">15</span>
+            <span id="alive-count" class="pill-val">20</span>
           </div>
           <div class="stat-pill kills-pill">
             <span class="pill-icon">💀</span>
@@ -66,8 +74,8 @@
           </div>
           <div class="stat-pill storm-pill" id="storm-timer-pill">
             <span class="pill-icon">⚡</span>
-            <span class="pill-title">ZONA:</span>
-            <span id="storm-timer" class="pill-val">0:45</span>
+            <span class="pill-title">TORMENTA:</span>
+            <span id="storm-timer" class="pill-val">1:00</span>
           </div>
         </div>
       </div>
@@ -90,11 +98,31 @@
 
     <!-- Alerta de Tormenta / Zona de Peligro -->
     <div id="storm-warning" class="storm-warning hidden">
-      ⚠️ ¡CUIDADO! ESTÁS FUERA DE LA ZONA SEGURA ⚠️
+      ⚠️ ¡CUIDADO! ESTÁS EN LA TORMENTA ⚠️
     </div>
 
     <!-- Notificaciones Flotantes del Juego -->
-    <div id="status-banner" class="status-banner">¡ENCUENTRA COFRES Y ELIMINA A LOS PELONES!</div>
+    <div id="status-banner" class="status-banner">¡CAE A LA ISLA Y SAQUEA CASAS!</div>
+
+    <!-- Barra de Progreso de Consumible (Mini Escudo / Botiquín) -->
+    <div id="use-progress-container" class="use-progress-container hidden">
+      <div id="use-progress-label">🧪 BEBIENDO ESCUDO...</div>
+      <div class="use-progress-track">
+        <div id="use-progress-fill" class="use-progress-fill"></div>
+      </div>
+    </div>
+
+    <!-- Prompt Interactivo de Recogida de Botín / Cofre -->
+    <div id="loot-prompt" class="loot-prompt hidden">
+      <div class="loot-prompt-card">
+        <div class="loot-prompt-icon" id="loot-prompt-icon">🔫</div>
+        <div class="loot-prompt-details">
+          <div class="loot-prompt-title" id="loot-prompt-title">Escopeta Pesada</div>
+          <div class="loot-prompt-sub" id="loot-prompt-sub">Presiona [E] o Toca para recoger</div>
+        </div>
+        <div class="loot-prompt-key-badge" id="loot-prompt-key">E</div>
+      </div>
+    </div>
 
     <!-- HUD INFERIOR IZQUIERDO: Salud y Escudo del Jugador -->
     <div id="player-bars-hud" class="player-bars-hud">
@@ -102,10 +130,10 @@
       <div class="bar-unit shield-unit">
         <div class="bar-info">
           <span class="unit-icon">🛡️ ESCUDO</span>
-          <span id="shield-val-text">100 / 100</span>
+          <span id="shield-val-text">0 / 100</span>
         </div>
         <div class="bar-track">
-          <div id="shield-fill" class="bar-progress shield-fill" style="width: 100%;"></div>
+          <div id="shield-fill" class="bar-progress shield-fill" style="width: 0%;"></div>
         </div>
       </div>
 
@@ -121,39 +149,41 @@
       </div>
     </div>
 
-    <!-- Barra Rápida de Armas / Inventario (Clean Weapon Bar) -->
+    <!-- INVENTARIO DINÁMICO DE 5 RANURAS (Estilo Battle Royale Real) -->
     <div id="weapon-bar" class="weapon-bar">
-      <button class="weapon-slot active" data-weapon="gloves" title="1. Guantes">
-        <span class="weapon-icon">🥊</span>
-        <span class="weapon-key">1</span>
+      <!-- Ranura 1: Puños (Por defecto) -->
+      <button class="weapon-slot active" data-slot="0" title="1. Puños">
+        <span class="slot-num">1</span>
+        <span class="weapon-icon" id="slot-icon-0">🥊</span>
+        <span class="slot-label" id="slot-name-0">Puños</span>
       </button>
-      <button class="weapon-slot" data-weapon="bat" title="2. Bate">
-        <span class="weapon-icon">🏏</span>
-        <span class="weapon-key">2</span>
+
+      <!-- Ranura 2: Vacía o Arma -->
+      <button class="weapon-slot empty" data-slot="1" title="2. Ranura 2">
+        <span class="slot-num">2</span>
+        <span class="weapon-icon" id="slot-icon-1">➕</span>
+        <span class="slot-label" id="slot-name-1">Vacío</span>
       </button>
-      <button class="weapon-slot" data-weapon="pistol" title="3. Pistola">
-        <span class="weapon-icon">🔫</span>
-        <span class="weapon-key">3</span>
+
+      <!-- Ranura 3: Vacía o Arma -->
+      <button class="weapon-slot empty" data-slot="2" title="3. Ranura 3">
+        <span class="slot-num">3</span>
+        <span class="weapon-icon" id="slot-icon-2">➕</span>
+        <span class="slot-label" id="slot-name-2">Vacío</span>
       </button>
-      <button class="weapon-slot" data-weapon="shotgun" title="4. Escopeta">
-        <span class="weapon-icon">💥</span>
-        <span class="weapon-key">4</span>
+
+      <!-- Ranura 4: Vacía o Arma -->
+      <button class="weapon-slot empty" data-slot="3" title="4. Ranura 4">
+        <span class="slot-num">4</span>
+        <span class="weapon-icon" id="slot-icon-3">➕</span>
+        <span class="slot-label" id="slot-name-3">Vacío</span>
       </button>
-      <button class="weapon-slot" data-weapon="rpg" title="5. RPG">
-        <span class="weapon-icon">🚀</span>
-        <span class="weapon-key">5</span>
-      </button>
-      <button class="weapon-slot" data-weapon="laser" title="6. Láser">
-        <span class="weapon-icon">⚡</span>
-        <span class="weapon-key">6</span>
-      </button>
-      <button class="weapon-slot" data-weapon="grenade" title="7. TNT">
-        <span class="weapon-icon">💣</span>
-        <span class="weapon-key">7</span>
-      </button>
-      <button class="weapon-slot" data-weapon="medkit" title="8. Botiquín">
-        <span class="weapon-icon">🧪</span>
-        <span class="weapon-key">8</span>
+
+      <!-- Ranura 5: Vacía o Consumible / Escudo -->
+      <button class="weapon-slot empty" data-slot="4" title="5. Ranura 5">
+        <span class="slot-num">5</span>
+        <span class="weapon-icon" id="slot-icon-4">➕</span>
+        <span class="slot-label" id="slot-name-4">Vacío</span>
       </button>
     </div>
 
@@ -169,6 +199,15 @@
       <!-- Zona Táctil Derecha para Apuntar / Rotar Cámara -->
       <div id="touch-look-zone" class="touch-look-zone"></div>
 
+      <!-- Botón Flotante Grande de Recogida / Abrir en Móvil -->
+      <button id="m-btn-pickup" class="m-pickup-btn hidden" aria-label="Recoger Botín">
+        <span id="m-pickup-icon">🖐️</span>
+        <div class="m-pickup-text">
+          <b id="m-pickup-title">RECOGER</b>
+          <small id="m-pickup-sub">TOCA AQUÍ</small>
+        </div>
+      </button>
+
       <!-- Botones de Acción Táctiles Ergonómicos -->
       <div class="mobile-action-cluster">
         <button id="m-btn-jump" class="m-touch-btn jump-touch" aria-label="Saltar">
@@ -176,19 +215,19 @@
           <small>SALTO</small>
         </button>
 
-        <button id="m-btn-tnt" class="m-touch-btn tnt-touch" aria-label="Spawn TNT">
+        <button id="m-btn-tnt" class="m-touch-btn tnt-touch" aria-label="Lanzar">
           <span>💣</span>
-          <small>+TNT</small>
+          <small>LANZAR</small>
         </button>
 
-        <button id="m-btn-chest" class="m-touch-btn chest-touch" aria-label="Abrir Cofre">
+        <button id="m-btn-chest" class="m-touch-btn chest-touch" aria-label="Abrir">
           <span>🎁</span>
           <small>ABRIR</small>
         </button>
 
         <button id="m-btn-attack" class="m-touch-btn attack-touch" aria-label="Disparar / Atacar">
           <span id="m-attack-icon">🥊</span>
-          <small>FUEGO</small>
+          <small id="m-attack-label">GOLPE</small>
         </button>
       </div>
     </div>
@@ -233,7 +272,7 @@
           <div class="map-card active" data-map="island">
             <div class="map-icon">🏝️</div>
             <div class="map-title">Isla Battle Royale</div>
-            <div class="map-desc">Terreno gigante con colinas, palmeras, costa, búnkeres y cofres de botín.</div>
+            <div class="map-desc">Terreno gigante con aldeas de cabañas, búnker militar, torres y cofres de botín.</div>
             <button class="select-map-btn">SELECCIONADO</button>
           </div>
           <div class="map-card" data-map="city">
@@ -268,14 +307,14 @@
         <div class="modes-grid">
           <div class="mode-card active" data-mode="royale">
             <div class="mode-icon">👑</div>
-            <div class="mode-title">Battle Royale (15 Pelones)</div>
-            <div class="mode-desc">Sobrevive contra 15 Pelones armados mientras se cierra la tormenta. ¡Consigue la Victoria Royale!</div>
+            <div class="mode-title">Battle Royale (20 Pelones)</div>
+            <div class="mode-desc">Cae en paracaídas, saquea casas, equípate armas y sobrevive a la tormenta. ¡Consigue la Victoria Royale #1!</div>
             <button class="select-mode-btn">ACTIVAR</button>
           </div>
           <div class="mode-card" data-mode="horde">
             <div class="mode-icon">🧟</div>
             <div class="mode-title">Horda / Supervivencia</div>
-            <div class="mode-desc">Oleadas continuas de Pelones cada vez más rápidos y locos. ¡Sobrevive lo que puedas!</div>
+            <div class="mode-desc">Oleadas continuas de Pelones humanoides que corren hacia ti. ¡Sobrevive lo que puedas!</div>
             <button class="select-mode-btn">ACTIVAR</button>
           </div>
           <div class="mode-card" data-mode="sandbox">
@@ -314,7 +353,7 @@
           <div class="shop-grid" id="accessories-grid"></div>
         </div>
 
-        <div class="shop-footer">
+        <div id="shop-footer" class="shop-footer">
           <div class="shop-balance">
             <span>Tus Monedas:</span>
             <span class="coin-highlight">🪙 <span id="shop-coins-display">0</span></span>
@@ -327,7 +366,7 @@
     <div id="victory-modal" class="modal-backdrop hidden">
       <div class="victory-card">
         <div class="victory-banner">#1 ¡VICTORIA ROYALE!</div>
-        <div class="victory-sub">👑 ¡ERES EL REY DEL RING Y DE LA ISLA! 👑</div>
+        <div class="victory-sub">👑 ¡ERES EL ÚLTIMO PELÓN EN PIE! 👑</div>
         <div class="victory-stats">
           <div class="v-stat-row"><span>💀 Pelones Eliminados:</span><b id="v-kills">0</b></div>
           <div class="v-stat-row"><span>💥 Daño Total:</span><b id="v-damage">0</b></div>
@@ -341,36 +380,36 @@
     <div id="gameover-modal" class="modal-backdrop hidden">
       <div class="gameover-card">
         <div class="go-title">☠️ HAS SIDO ELIMINADO</div>
-        <p class="go-desc">Los Pelones te superaron o la tormenta te alcanzó.</p>
+        <p class="go-desc">Otro Pelón te liquidó o la tormenta te alcanzó.</p>
         <div class="victory-stats">
           <div class="v-stat-row"><span>💀 Bajas conseguidas:</span><b id="go-kills">0</b></div>
           <div class="v-stat-row"><span>🪙 Monedas obtenidas:</span><b id="go-coins">+0</b></div>
         </div>
-        <button id="btn-respawn" class="victory-btn">¡REAPARECER! 🥊</button>
+        <button id="btn-respawn" class="victory-btn">¡VOLVER A LANZARSE! 🪂</button>
       </div>
     </div>
 
     <!-- PANTALLA INICIAL DE BIENVENIDA -->
     <div id="start-overlay" class="modal-backdrop">
       <div class="start-card">
-        <div class="title-badge">¡EXPERIENCIA BATTLE ROYALE 3D!</div>
+        <div class="title-badge">¡AUTÉNTICO BATTLE ROYALE 3D!</div>
         <h1 class="game-title">PELÓN ROYALE<br><span class="subtitle">EL DESQUITE 3D</span></h1>
         
         <div class="pelon-avatar-preview">
-          🏝️🏆🔫👨‍🦲💥🚀
+          🪂🏝️🔫👨‍🦲💥🏆
         </div>
 
         <p class="intro-desc">
-          Lánzate a la <b>Isla Battle Royale</b>, la <b>Ciudad Cyberpunk</b> o el <b>Volcán</b>. Ármate con cofres de botín, elimina a los Pelones enemigos y sobrevive a la tormenta.
+          Cae en paracaídas a la <b>Isla Battle Royale</b> con las manos vacías. Explora las cabañas y búnkeres para encontrar armas, escudos y botiquines. ¡Elimina a los otros 20 Pelones y sobrevive a la tormenta!
         </p>
 
         <button id="btn-start-game" class="huge-start-btn">
-          <span>¡A LA BATALLA!</span> 🏆
+          <span>¡LÁNZATE EN PARACAÍDAS!</span> 🪂
         </button>
 
         <div class="instructions-pill">
-          💡 <b>Celular:</b> Joystick izquierdo para caminar, desliza a la derecha para apuntar, botones a la derecha para atacar y abrir cofres.<br>
-          💡 <b>PC:</b> Clic para apuntar con ratón, WASD para moverse, Clic Izq para disparar, E para abrir cofres, 1 al 8 para armas.
+          💡 <b>Celular:</b> Joystick izquierdo para caminar/planear, desliza a la derecha para apuntar. Toca el botón <b>🖐️ RECOGER</b> cuando veas armas en el suelo o cofres.<br>
+          💡 <b>PC:</b> Ratón para apuntar y disparar, <b>WASD</b> para moverte, <b>E</b> para recoger armas del suelo y abrir cofres, <b>1-5</b> para cambiar de ranura.
         </div>
       </div>
     </div>
